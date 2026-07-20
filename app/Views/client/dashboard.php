@@ -55,6 +55,7 @@
                     <?php endforeach ?>
                 </div>
                 <button class="btn btn-outline-secondary btn-sm" id="add-recipient" type="button">+ Ajouter un numéro</button>
+                <br>
                 <label class="form-label mt-2" for="transfer-amount">Montant (Ar)</label>
                 <input class="form-control" id="transfer-amount" name="montant" type="number" min="0.01" step="0.01"
                        value="<?= esc(old('montant')) ?>" required>
