@@ -16,6 +16,7 @@ CREATE TABLE transactions (
     id INT PRIMARY KEY AUTO_INCREMENT,
     num VARCHAR(10),
     montant DECIMAL(10, 2),
+    frais DECIMAL(10, 2),
     dateTransaction TIMESTAMP
 );
 
