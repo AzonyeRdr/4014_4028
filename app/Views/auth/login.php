@@ -13,6 +13,12 @@
                     maxlength="10" required autofocus>
                 <button class="btn btn-primary w-100 mt-3">Se connecter</button>
             </form>
+            <p>Clé</p>
+            <ul>
+                <li>0000000000</li>
+                <li>1111111111</li>
+                <li>2222222222</li>
+            </ul>
         </div>
     </div>
 </div>
