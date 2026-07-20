@@ -1,0 +1,30 @@
+body {
+  background: #f5f7fb;
+}
+
+.navbar-brand {
+  font-weight: 700;
+}
+
+.card {
+  border: 0;
+  box-shadow: 0 0.2rem 1rem rgba(0, 0, 0, 0.07);
+}
+
+.amount-positive {
+  color: #198754;
+  font-weight: 600;
+}
+
+.amount-negative {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.table > :not(caption) > * > * {
+  vertical-align: middle;
+}
+
+.fee-input {
+  max-width: 180px;
+}
