@@ -17,6 +17,7 @@ CREATE TABLE transactions (
     num VARCHAR(10),
     montant DECIMAL(10, 2),
     frais DECIMAL(10, 2),
+    commission DECIMAL(10, 2),
     dateTransaction TIMESTAMP
 );
 
@@ -32,6 +33,10 @@ CREATE TABLE frais (
     montantMin DECIMAL(10, 2),
     montantMax DECIMAL(10, 2),
     montantFrais DECIMAL(10, 2)
+);
+
+CREATE TABLE commissions (
+    pourcentage DECIMAL(4, 2)
 );
 
 INSERT INTO prefixes VALUES
@@ -92,3 +97,5 @@ INSERT INTO transferts (idTransactionE, idTransactionD) VALUES
 (2, 1), -- Le numéro 0334455667 a envoyé 5000 Ar au 0321122334
 (4, 3), -- Le numéro 0325566778 a envoyé 12000 Ar au 0342233445
 (6, 5); -- Le numéro 0347788990 a envoyé 60000 Ar au 0388887766
+
+INSERT INTO commissions VALUES (1);

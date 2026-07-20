@@ -41,7 +41,13 @@ class DatabaseSeeder extends Seeder
         ];
         $this->db->table('frais')->insertBatch($frais);
 
-        // 4. Seed numeros
+        // 4. Seed commissions
+        $commissions = [
+            ['pourcentage' => 1.00]
+        ];
+        $this->db->table('commissions')->insertBatch($commissions);
+
+        // 5. Seed numeros
         $numeros = [
             ['num' => '0321122334'],
             ['num' => '0325566778'],

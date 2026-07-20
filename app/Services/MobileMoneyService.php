@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ClesModel;
+use App\Models\CommissionsModel;
 use App\Models\FraisModel;
 use App\Models\NumerosModel;
 use App\Models\PrefixesModel;
@@ -15,6 +16,7 @@ use Throwable;
 class MobileMoneyService
 {
     private ClesModel $cles;
+    private CommissionsModel $commissions;
     private FraisModel $frais;
     private NumerosModel $numeros;
     private PrefixesModel $prefixes;
@@ -25,6 +27,7 @@ class MobileMoneyService
     public function __construct()
     {
         $this->cles = new ClesModel();
+        $this->commissions = new CommissionsModel();
         $this->frais = new FraisModel();
         $this->numeros = new NumerosModel();
         $this->prefixes = new PrefixesModel();
@@ -175,7 +178,12 @@ class MobileMoneyService
         return round($solde, 2);
     }
 
-    public function ajouterTransaction(string $numero, float $montant, float $fraisAppliques = 0): int
+    public function ajouterTransaction(
+        string $numero,
+        float $montant,
+        float $fraisAppliques = 0,
+        float $commission = 0
+    ): int
     {
         $this->transactions->insert([
             'num' => $numero,
@@ -183,6 +191,7 @@ class MobileMoneyService
             // Cette valeur est figée lors de l'opération et ne dépendra plus
             // des modifications futures apportées aux barèmes.
             'frais' => round($fraisAppliques, 2),
+            'commission' => round($commission, 2),
             'dateTransaction' => date('Y-m-d H:i:s'),
         ]);
         return (int) $this->transactions->getInsertID();
@@ -208,31 +217,114 @@ class MobileMoneyService
 
     public function transferer(string $expediteur, string $destinataire, float $montant): float
     {
-        $frais = $this->fraisPourMontant($montant);
-        $total = $montant + $frais;
-        // La transaction concerne seulement la cohérence des trois écritures.
+        return $this->transfererMultiple($expediteur, [$destinataire], $montant, false)['fraisTransfert'];
+    }
+
+    /**
+     * Crée un débit global et un crédit par destinataire.
+     *
+     * La commission totale est portée par le débit global. Sa part par destinataire
+     * est aussi figée sur le crédit pour permettre une ventilation fiable des gains.
+     */
+    public function transfererMultiple(
+        string $expediteur,
+        array $destinataires,
+        float $montantTotal,
+        bool $inclureFraisRetrait = false
+    ): array {
+        $destinataires = array_values(array_unique($destinataires));
+        if ($destinataires === []) {
+            throw new DomainException('Ajoutez au moins un destinataire.');
+        }
+
+        $operateurExpediteur = $this->operateurDuNumero($expediteur);
+        if ($operateurExpediteur === null) {
+            throw new DomainException('Le préfixe de l’expéditeur est inconnu.');
+        }
+
+        $nombre = count($destinataires);
+        $partStandard = round($montantTotal / $nombre, 2);
+        $parts = array_fill(0, $nombre, $partStandard);
+        $parts[$nombre - 1] = round($montantTotal - ($partStandard * ($nombre - 1)), 2);
+        $pourcentageCommission = $this->pourcentageCommission();
+        $credits = [];
+        $totalFraisTransfert = 0.0;
+        $totalCommission = 0.0;
+        $totalCredits = 0.0;
+
+        foreach ($destinataires as $index => $destinataire) {
+            if (! preg_match('/^[0-9]{10}$/', $destinataire) || $destinataire === $expediteur) {
+                throw new DomainException('La liste des destinataires contient un numéro invalide.');
+            }
+            $operateurDestinataire = $this->operateurDuNumero($destinataire);
+            if ($operateurDestinataire === null) {
+                throw new DomainException("Le préfixe de {$destinataire} est inconnu.");
+            }
+
+            $part = $parts[$index];
+            $fraisUnitaire = $this->fraisPourMontant($part);
+            $montantCredite = round($part + ($inclureFraisRetrait ? $fraisUnitaire : 0), 2);
+            // Le supplément envoyé pour couvrir le retrait appartient au
+            // destinataire : il ne constitue jamais une base de gain.
+            $commission = $operateurDestinataire !== $operateurExpediteur
+                ? round($part * $pourcentageCommission / 100, 2)
+                : 0.0;
+            $credits[] = compact('destinataire', 'montantCredite', 'commission');
+            $totalFraisTransfert += $fraisUnitaire;
+            $totalCommission += $commission;
+            $totalCredits += $montantCredite;
+        }
+
+        $totalFraisTransfert = round($totalFraisTransfert, 2);
+        $totalCommission = round($totalCommission, 2);
+        $totalDebite = round($totalCredits + $totalFraisTransfert + $totalCommission, 2);
         $baseDonnees = db_connect();
         $baseDonnees->transBegin();
         try {
-            // Le contrôle est fait dans la transaction et inclut toujours les frais.
-            $this->verifierSoldeSuffisant($expediteur, $total, 'transfert');
-            if (! $this->creerNumeroSiAbsent($destinataire)) {
-                throw new DomainException('Le numéro destinataire possède un préfixe inconnu.');
+            $this->verifierSoldeSuffisant($expediteur, $totalDebite, 'transfert');
+            foreach ($destinataires as $destinataire) {
+                if (! $this->creerNumeroSiAbsent($destinataire)) {
+                    throw new DomainException("Impossible de créer le numéro {$destinataire}.");
+                }
             }
-            $idDebit = $this->ajouterTransaction($expediteur, -$total, $frais);
-            $idCredit = $this->ajouterTransaction($destinataire, $montant);
-            if ($this->transferts->insert([
-                'idTransactionE' => $idDebit,
-                'idTransactionD' => $idCredit,
-            ]) === false) {
-                throw new DomainException('Impossible d’enregistrer le transfert.');
+            $idDebit = $this->ajouterTransaction(
+                $expediteur,
+                -$totalDebite,
+                $totalFraisTransfert,
+                $totalCommission
+            );
+            foreach ($credits as $credit) {
+                // Le crédit porte la commission ventilée uniquement comme métadonnée.
+                // Son montant n'est jamais compté une seconde fois dans le solde.
+                $idCredit = $this->ajouterTransaction(
+                    $credit['destinataire'],
+                    $credit['montantCredite'],
+                    0,
+                    $credit['commission']
+                );
+                if ($this->transferts->insert([
+                    'idTransactionE' => $idDebit,
+                    'idTransactionD' => $idCredit,
+                ]) === false) {
+                    throw new DomainException('Impossible d’enregistrer un transfert.');
+                }
             }
             $baseDonnees->transCommit();
         } catch (Throwable $exception) {
             $baseDonnees->transRollback();
             throw $exception;
         }
-        return $frais;
+        return [
+            'fraisTransfert' => $totalFraisTransfert,
+            'commission' => $totalCommission,
+            'totalDebite' => $totalDebite,
+        ];
+    }
+
+    public function pourcentageCommission(): float
+    {
+        $ligne = $this->commissions->first();
+        return $ligne === null ? 0.0 : (float) $ligne['pourcentage'];
     }
 
     public function numerosDeOperateur(string $operateur, int $elementsParPage = 10): array
@@ -315,7 +407,36 @@ class MobileMoneyService
         ];
     }
 
-    public function gainsFraisOperateur(string $operateur): array
+    public function tableauGainsOperateur(string $operateur): array
+    {
+        $lignes = [];
+        foreach ($this->operateurs() as $operateurSource) {
+            $details = $this->collecterDetailsGains($operateur, $operateurSource);
+            $colonne = $operateurSource === $operateur ? 'frais' : 'commission';
+            $lignes[] = [
+                'operateur' => $operateurSource,
+                'montant' => round(array_sum(array_column($details, $colonne)), 2),
+            ];
+        }
+        return $lignes;
+    }
+
+    public function detailsGainsOperateur(
+        string $operateur,
+        string $operateurSource,
+        int $elementsParPage = 10
+    ): array {
+        if (! in_array($operateurSource, $this->operateurs(), true)) {
+            throw new DomainException('Opérateur inconnu.');
+        }
+        return $this->paginer(
+            $this->collecterDetailsGains($operateur, $operateurSource),
+            'gains',
+            $elementsParPage
+        );
+    }
+
+    private function collecterDetailsGains(string $operateur, string $operateurSource): array
     {
         $transactions = [];
         foreach ($this->transactions->findAll() as $transaction) {
@@ -323,6 +444,7 @@ class MobileMoneyService
         }
 
         $idsDebitsTransfert = [];
+        $debitsDejaAjoutes = [];
         $gains = [];
         foreach ($this->transferts->findAll() as $transfert) {
             $idDebit = (int) $transfert['idTransactionE'];
@@ -332,10 +454,38 @@ class MobileMoneyService
                 continue;
             }
             $debit = $transactions[$idDebit];
-            $fraisTransfert = (float) $debit['frais'];
-            if ($this->operateurDuNumero($debit['num']) === $operateur && $fraisTransfert > 0) {
-                $gains[] = $this->ligneGain($debit, 'Transfert', $fraisTransfert);
+            $credit = $transactions[$idCredit];
+            $operateurDebit = $this->operateurDuNumero($debit['num']);
+            $operateurCredit = $this->operateurDuNumero($credit['num']);
+
+            if ($operateurSource === $operateur) {
+                $fraisTransfert = (float) $debit['frais'];
+                if ($operateurDebit === $operateur
+                    && $fraisTransfert > 0
+                    && ! isset($debitsDejaAjoutes[$idDebit])) {
+                    $debitsDejaAjoutes[$idDebit] = true;
+                    $gains[] = $this->ligneGain($debit, 'Transfert', $fraisTransfert);
+                }
+                continue;
             }
+
+            // Correction métier : un gain provenant d'un opérateur tiers est un
+            // transfert entrant (tiers -> opérateur en session), jamais un sortant.
+            if ($operateurDebit === $operateurSource && $operateurCredit === $operateur) {
+                $gains[] = [
+                    'id' => $transfert['id'],
+                    'dateTransaction' => $debit['dateTransaction'],
+                    'expediteur' => $debit['num'],
+                    'destinataire' => $credit['num'],
+                    'montant' => (float) $credit['montant'],
+                    'commission' => (float) $credit['commission'],
+                ];
+            }
+        }
+
+        if ($operateurSource !== $operateur) {
+            usort($gains, static fn (array $a, array $b): int => strcmp($b['dateTransaction'], $a['dateTransaction']));
+            return $gains;
         }
 
         foreach ($transactions as $transaction) {
@@ -351,6 +501,13 @@ class MobileMoneyService
         }
         usort($gains, static fn (array $a, array $b): int => strcmp($b['dateTransaction'], $a['dateTransaction']));
         return $gains;
+    }
+
+    private function operateurs(): array
+    {
+        $operateurs = array_values(array_unique(array_column($this->prefixes->findAll(), 'operateur')));
+        sort($operateurs, SORT_NATURAL | SORT_FLAG_CASE);
+        return $operateurs;
     }
 
     private function ligneGain(array $transaction, string $type, float $frais): array

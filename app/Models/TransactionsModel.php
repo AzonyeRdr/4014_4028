@@ -9,6 +9,6 @@ class TransactionsModel extends Model
     protected $table = 'transactions';
     protected $primaryKey = 'id';
     protected $returnType = 'array';
-    protected $allowedFields = ['num', 'montant', 'frais', 'dateTransaction'];
+    protected $allowedFields = ['num', 'montant', 'frais', 'commission', 'dateTransaction'];
 
 }

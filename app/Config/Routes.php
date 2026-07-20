@@ -31,6 +31,7 @@ $routes->group('operator', ['filter' => 'operatorAuth'], static function ($route
     $routes->get('numeros', 'OperatorController::numeros');
     $routes->get('numeros/(:num)/historique', 'OperatorController::historique/$1');
     $routes->get('gains', 'OperatorController::gains');
+    $routes->get('gains/details/(:segment)', 'OperatorController::detailsGains/$1');
     $routes->post('frais', 'OperatorController::ajouterBareme');
     $routes->post('frais/(:num)', 'OperatorController::modifierBareme/$1');
     $routes->post('frais/(:num)/supprimer', 'OperatorController::supprimerBareme/$1');

@@ -68,6 +68,20 @@ class CreateDbTables extends Migration
         $this->forge->addPrimaryKey('id');
         $this->forge->createTable('frais');
 
+        // Table: commissions
+        $this->forge->addField([
+            'id' => [
+                'type'           => 'INT',
+                'auto_increment' => true,
+            ],
+            'pourcentage' => [
+                'type'       => 'DECIMAL',
+                'constraint' => '4,2',
+            ],
+        ]);
+        $this->forge->addPrimaryKey('id');
+        $this->forge->createTable('commissions');
+
         // Table: transactions
         $this->forge->addField([
             'id' => [
@@ -85,7 +99,12 @@ class CreateDbTables extends Migration
             'frais' => [
                 'type'       => 'DECIMAL',
                 'constraint' => '10,2',
-                'default'    => 0,
+                'default'    => 0.00,
+            ],
+            'commission' => [
+                'type'       => 'DECIMAL',
+                'constraint' => '10,2',
+                'default'    => 0.00,
             ],
             'dateTransaction' => [
                 'type' => 'TIMESTAMP',
@@ -117,6 +136,7 @@ class CreateDbTables extends Migration
     {
         $this->forge->dropTable('transferts', true);
         $this->forge->dropTable('transactions', true);
+        $this->forge->dropTable('commissions', true);
         $this->forge->dropTable('frais', true);
         $this->forge->dropTable('cles', true);
         $this->forge->dropTable('numeros', true);

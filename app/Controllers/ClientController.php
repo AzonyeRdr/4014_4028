@@ -58,20 +58,33 @@ class ClientController extends BaseController
         }
 
         $expediteur = (string) session('client_num');
-        $destinataire = trim((string) $this->request->getPost('destinataire'));
-        if (! preg_match('/^[0-9]{10}$/', $destinataire)) {
-            return redirect()->back()->withInput()->with('error', 'Le destinataire doit contenir exactement 10 chiffres.');
+        $destinataires = $this->request->getPost('destinataires');
+        $destinataires = is_array($destinataires) ? array_values(array_unique(array_map('trim', $destinataires))) : [];
+        if ($destinataires === []) {
+            return redirect()->back()->withInput()->with('error', 'Ajoutez au moins un destinataire.');
         }
-        if ($destinataire === $expediteur) {
-            return redirect()->back()->withInput()->with('error', 'Vous ne pouvez pas effectuer un transfert vers votre propre numéro.');
-        }
-        if ($this->serviceMobile->operateurDuNumero($destinataire) === null) {
-            return redirect()->back()->withInput()->with('error', 'Le préfixe du destinataire est inconnu.');
+        foreach ($destinataires as $destinataire) {
+            if (! preg_match('/^[0-9]{10}$/', $destinataire)) {
+                return redirect()->back()->withInput()->with('error', 'Chaque destinataire doit contenir exactement 10 chiffres.');
+            }
+            if ($destinataire === $expediteur) {
+                return redirect()->back()->withInput()->with('error', 'Votre propre numéro ne peut pas être destinataire.');
+            }
+            if ($this->serviceMobile->operateurDuNumero($destinataire) === null) {
+                return redirect()->back()->withInput()->with('error', "Le préfixe de {$destinataire} est inconnu.");
+            }
         }
 
         try {
-            $frais = $this->serviceMobile->transferer($expediteur, $destinataire, $montant);
-            return redirect()->to('/client')->with('success', "Transfert effectué. Frais : {$frais} Ar.");
+            $inclureFrais = $this->request->getPost('inclure_frais_retrait') === '1';
+            $resume = $this->serviceMobile->transfererMultiple($expediteur, $destinataires, $montant, $inclureFrais);
+            return redirect()->to('/client')->with('success', sprintf(
+                'Transfert effectué vers %d destinataire(s). Frais de transfert : %.2f Ar. Commission : %.2f Ar. Total débité : %.2f Ar.',
+                count($destinataires),
+                $resume['fraisTransfert'],
+                $resume['commission'],
+                $resume['totalDebite']
+            ));
         } catch (DomainException $exception) {
             return redirect()->back()->withInput()->with('error', $exception->getMessage());
         } catch (\Throwable $exception) {
