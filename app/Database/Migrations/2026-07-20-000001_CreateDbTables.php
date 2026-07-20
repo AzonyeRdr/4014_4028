@@ -82,6 +82,11 @@ class CreateDbTables extends Migration
                 'type'       => 'DECIMAL',
                 'constraint' => '10,2',
             ],
+            'frais' => [
+                'type'       => 'DECIMAL',
+                'constraint' => '10,2',
+                'default'    => 0,
+            ],
             'dateTransaction' => [
                 'type' => 'TIMESTAMP',
             ],

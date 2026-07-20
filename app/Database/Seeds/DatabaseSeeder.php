@@ -53,35 +53,5 @@ class DatabaseSeeder extends Seeder
             ['num' => '0388887766'],
         ];
         $this->db->table('numeros')->insertBatch($numeros);
-
-        // 5. Seed transactions
-        $transactions = [
-            // Transferts (ID 1 à 6)
-            ['num' => '0321122334', 'montant' => 5000.00, 'dateTransaction' => '2026-07-20 08:00:00'],
-            ['num' => '0334455667', 'montant' => -5000.00, 'dateTransaction' => '2026-07-20 08:02:00'],
-            ['num' => '0342233445', 'montant' => 12000.00, 'dateTransaction' => '2026-07-20 09:15:00'],
-            ['num' => '0325566778', 'montant' => -12000.00, 'dateTransaction' => '2026-07-20 09:16:00'],
-            ['num' => '0388887766', 'montant' => 60000.00, 'dateTransaction' => '2026-07-20 10:30:00'],
-            ['num' => '0347788990', 'montant' => -60000.00, 'dateTransaction' => '2026-07-20 10:31:00'],
-            
-            // Dépôts simples (ID 7 à 9)
-            ['num' => '0321122334', 'montant' => 15000.00, 'dateTransaction' => '2026-07-20 11:00:00'],
-            ['num' => '0338899001', 'montant' => 50000.00, 'dateTransaction' => '2026-07-20 11:15:00'],
-            ['num' => '0371112233', 'montant' => 150000.00, 'dateTransaction' => '2026-07-20 12:00:00'],
-            
-            // Retraits simples (ID 10 à 12)
-            ['num' => '0342233445', 'montant' => -2500.00, 'dateTransaction' => '2026-07-20 13:45:00'],
-            ['num' => '0334455667', 'montant' => -10000.00, 'dateTransaction' => '2026-07-20 14:20:00'],
-            ['num' => '0388887766', 'montant' => -45000.00, 'dateTransaction' => '2026-07-20 15:10:00'],
-        ];
-        $this->db->table('transactions')->insertBatch($transactions);
-
-        // 6. Seed transferts
-        $transferts = [
-            ['idTransactionE' => 2, 'idTransactionD' => 1],
-            ['idTransactionE' => 4, 'idTransactionD' => 3],
-            ['idTransactionE' => 6, 'idTransactionD' => 5],
-        ];
-        $this->db->table('transferts')->insertBatch($transferts);
     }
 }
