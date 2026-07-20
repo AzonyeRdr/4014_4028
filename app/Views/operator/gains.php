@@ -2,18 +2,19 @@
 <?= $this->section('content') ?>
 <a href="<?= site_url('operator/numeros') ?>" class="btn btn-outline-secondary btn-sm mb-3">← Liste des numéros</a>
 <div class="d-flex justify-content-between align-items-end mb-4">
-    <div><p class="text-secondary mb-1"><?= esc($operateur) ?></p><h1 class="h3 mb-0">Frais perçus</h1></div>
+    <div><p class="text-secondary mb-1"><?= esc($operateur) ?></p><h1 class="h3 mb-0">Gains par opérateur</h1></div>
     <div class="text-end"><small class="text-secondary">Gain total</small><div class="h2 text-success mb-0"><?= number_format((float) $gainTotal, 2, ',', ' ') ?> Ar</div></div>
 </div>
 <div class="card p-3 mb-5">
     <div class="table-responsive"><table class="table mb-0">
-        <thead><tr><th>Date</th><th>Numéro</th><th>Opération</th><th class="text-end">Frais</th></tr></thead>
+        <thead><tr><th>Opérateur</th><th class="text-end">Montant total des gains</th><th class="text-end">Action</th></tr></thead>
         <tbody>
-        <?php foreach ($gainsFrais as $gain): ?><tr>
-            <td><?= esc($gain['dateTransaction']) ?></td><td><?= esc($gain['num']) ?></td><td><?= esc($gain['type']) ?></td>
-            <td class="text-end amount-positive"><?= number_format((float) $gain['frais'], 2, ',', ' ') ?> Ar</td>
+        <?php foreach ($tableauGains as $gain): ?><tr>
+            <td><?= esc($gain['operateur']) ?><?= $gain['operateur'] === $operateur ? ' (votre réseau)' : '' ?></td>
+            <td class="text-end amount-positive"><?= number_format((float) $gain['montant'], 2, ',', ' ') ?> Ar</td>
+            <td class="text-end"><a class="btn btn-outline-primary btn-sm" href="<?= site_url('operator/gains/details/' . rawurlencode($gain['operateur'])) ?>">Voir les détails</a></td>
         </tr><?php endforeach ?>
-        <?php if ($gainsFrais === []): ?><tr><td colspan="4" class="text-center text-secondary">Aucun frais perçu.</td></tr><?php endif ?>
+        <?php if ($tableauGains === []): ?><tr><td colspan="3" class="text-center text-secondary">Aucun opérateur.</td></tr><?php endif ?>
         </tbody>
     </table></div>
 </div>

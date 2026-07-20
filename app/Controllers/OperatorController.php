@@ -42,12 +42,33 @@ class OperatorController extends BaseController
 
     public function gains()
     {
-        $gainsFrais = $this->serviceMobile->gainsFraisOperateur((string) session('operator'));
+        $tableauGains = $this->serviceMobile->tableauGainsOperateur((string) session('operator'));
         return view('operator/gains', [
             'operateur' => session('operator'),
-            'gainsFrais' => $gainsFrais,
-            'gainTotal' => array_sum(array_column($gainsFrais, 'frais')),
+            'tableauGains' => $tableauGains,
+            'gainTotal' => array_sum(array_column($tableauGains, 'montant')),
             'baremesFrais' => $this->serviceMobile->baremesFrais(),
+        ]);
+    }
+
+    public function detailsGains(string $operateurSource)
+    {
+        $operateurSource = rawurldecode($operateurSource);
+        try {
+            $details = $this->serviceMobile->detailsGainsOperateur(
+                (string) session('operator'),
+                $operateurSource
+            );
+        } catch (DomainException $exception) {
+            return redirect()->to('/operator/gains')->with('error', $exception->getMessage());
+        }
+
+        return view('operator/gain_details', [
+            'operateur' => session('operator'),
+            'operateurSource' => $operateurSource,
+            'details' => $details,
+            'paginateur' => $this->serviceMobile->paginateur(),
+            'estPropreOperateur' => $operateurSource === session('operator'),
         ]);
     }
 

@@ -35,12 +35,13 @@ class AuthController extends BaseController
         $cle = $this->serviceMobile->chercherCle($valeur);
         if ($cle !== null) {
             session()->regenerate();
-            session()->remove('client_num');
+            session()->remove(['client_num', 'client_operator']);
             session()->set(['operator' => $cle['operateur'], 'role' => 'operator']);
             return redirect()->to('/operator/numeros');
         }
 
-        if ($this->serviceMobile->operateurDuNumero($valeur) === null) {
+        $operateur = $this->serviceMobile->operateurDuNumero($valeur);
+        if ($operateur === null) {
             return redirect()->back()->withInput()->with('error', 'Préfixe téléphonique inconnu.');
         }
 
@@ -50,7 +51,11 @@ class AuthController extends BaseController
 
         session()->regenerate();
         session()->remove('operator');
-        session()->set(['client_num' => $valeur, 'role' => 'client']);
+        session()->set([
+            'client_num' => $valeur,
+            'client_operator' => $operateur,
+            'role' => 'client',
+        ]);
         return redirect()->to('/client');
     }
 
