@@ -14,6 +14,13 @@
                 <button class="btn btn-primary w-100 mt-3">Se connecter</button>
             </form>
         </div>
+        <br>
+        <p>Clé :</p>
+        <ul>
+            <li>0000000000</li>
+            <li>1111111111</li>
+            <li>2222222222</li>
+        </ul>
     </div>
 </div>
 <?= $this->endSection() ?>
