@@ -26,6 +26,17 @@
     </div>
     <div class="col-md-6 col-lg-4">
         <div class="card h-100 p-4">
+            <h2 class="h5">Epargne</h2>
+            <form method="post" action="<?= site_url('epargne') ?>">
+                <?= csrf_field() ?>
+                <label class="form-label" for="deposit-amount">Pourcentage à éparger</label>
+                <input class="form-control" id="deposit-amount" name="pourcentage" type="number" min="0.01" step="0.01" required>
+                <button class="btn btn-success w-100 mt-3">Déposer</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 p-4">
             <h2 class="h5">Retirer</h2>
             <form method="post" action="<?= site_url('client/retrait') ?>">
                 <?= csrf_field() ?>
@@ -59,18 +70,18 @@
                 <label class="form-label mt-2" for="transfer-amount">Montant (Ar)</label>
                 <input class="form-control" id="transfer-amount" name="montant" type="number" min="0.01" step="0.01"
                        value="<?= esc(old('montant')) ?>" required>
-                <div class="form-check mt-3">
+                       <div class="form-check mt-3">
                     <input class="form-check-input" id="include-fees" name="inclure_frais_retrait" type="checkbox"
                            value="1" <?= old('inclure_frais_retrait') ? 'checked' : '' ?>>
-                    <label class="form-check-label" for="include-fees">Inclure les frais de retrait dans chaque envoi</label>
+                           <label class="form-check-label" for="include-fees">Inclure les frais de retrait dans chaque envoi</label>
+                        </div>
+                        <small class="text-secondary d-block">Le montant est partagé équitablement. Les frais de transfert sont calculés par destinataire.</small>
+                        <button class="btn btn-primary w-100 mt-3">Transférer</button>
+                    </form>
                 </div>
-                <small class="text-secondary d-block">Le montant est partagé équitablement. Les frais de transfert sont calculés par destinataire.</small>
-                <button class="btn btn-primary w-100 mt-3">Transférer</button>
-            </form>
+            </div>
         </div>
-    </div>
-</div>
-<script>
+        <script>
 (() => {
     const container = document.getElementById('recipients');
     const updateButtons = () => {
