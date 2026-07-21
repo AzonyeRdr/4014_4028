@@ -25,6 +25,7 @@ $routes->group('client', ['filter' => 'clientAuth'], static function ($routes) {
     $routes->post('depot', 'ClientController::deposer');
     $routes->post('retrait', 'ClientController::retirer');
     $routes->post('transfert', 'ClientController::transferer');
+    $routes->post('epargne', 'ClientController::epargner');
 });
 
 $routes->group('operator', ['filter' => 'operatorAuth'], static function ($routes) {

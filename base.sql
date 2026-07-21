@@ -43,6 +43,12 @@ CREATE TABLE promotion (
     pourcentage DECIMAL(4, 2)
 );
 
+CREATE Table epargne (
+    num INT UNIQUE,
+    pourcentage DECIMAL (4,2),
+    montant DECIMAL (10,2)
+);
+
 INSERT INTO prefixes VALUES
 ('032', 'Orange'),
 ('033', 'Airtel'),

@@ -2,24 +2,41 @@
 
 namespace App\Controllers;
 
+use App\Models\EpargneModel;
 use App\Services\MobileMoneyService;
 use DomainException;
 
-class ClientController extends BaseController
-{
+class ClientController extends BaseController {
     private MobileMoneyService $serviceMobile;
+    private EpargneModel $epargneModel;
 
-    public function __construct()
-    {
+    public function __construct() {
         $this->serviceMobile = new MobileMoneyService();
     }
 
-    public function tableauDeBord()
-    {
-        $numero = (string) session('client_num');
-        return view('client/dashboard', [
+    public function tableauDeBord() {
+        $numero = ( string ) session( 'client_num' );
+        return view( 'client/dashboard', [
             'numero' => $numero,
-            'solde' => $this->serviceMobile->solde($numero),
+            'solde' => $this->serviceMobile->solde( $numero ),
+        ] );
+    }
+
+    public function epargner() {
+        $numero = ( string ) session( 'client_num' );
+        $epargne = null;
+        if ( $this->epargneModel->find( $numero ) ) {
+            $epargne = $this->epargneModel->find( $numero );
+        } else {
+            $this->epargneModel->insert( [
+                'num' => $numero,
+                'montant' => 0.00,
+            ]);
+            $epargne = $this->epargneModel->find( $numero );
+        }
+        $pct = $this->request->getPost('pourcentage');
+        $epargne->update($numero, [
+            'pourcentage' => $pct,
         ]);
     }
 
@@ -64,7 +81,9 @@ class ClientController extends BaseController
             return redirect()->back()->withInput()->with('error', 'Ajoutez au moins un destinataire.');
         }
         foreach ($destinataires as $destinataire) {
-            if (! preg_match('/^[0-9]{10}$/', $destinataire)) {
+            if (! preg_match('/^[ 0-9 ] {
+                10}
+                $/', $destinataire)) {
                 return redirect()->back()->withInput()->with('error', 'Chaque destinataire doit contenir exactement 10 chiffres.');
             }
             if ($destinataire === $expediteur) {
@@ -79,7 +98,7 @@ class ClientController extends BaseController
             $inclureFrais = $this->request->getPost('inclure_frais_retrait') === '1';
             $resume = $this->serviceMobile->transfererMultiple($expediteur, $destinataires, $montant, $inclureFrais);
             return redirect()->to('/client')->with('success', sprintf(
-                'Transfert effectué vers %d destinataire(s). Frais de transfert : %.2f Ar. Commission : %.2f Ar. Total débité : %.2f Ar.',
+                'Transfert effectué vers %d destinataire( s ). Frais de transfert : %.2f Ar. Commission : %.2f Ar. Total débité : %.2f Ar.',
                 count($destinataires),
                 $resume['fraisTransfert'],
                 $resume['commission'],
@@ -88,7 +107,9 @@ class ClientController extends BaseController
         } catch (DomainException $exception) {
             return redirect()->back()->withInput()->with('error', $exception->getMessage());
         } catch (\Throwable $exception) {
-            log_message('error', 'Échec du transfert : {message}', ['message' => $exception->getMessage()]);
+            log_message('error', 'Échec du transfert : {
+                    message}
+                    ', ['message' => $exception->getMessage()]);
             return redirect()->back()->withInput()->with('error', 'Le transfert a échoué. Réessayez.');
         }
     }
@@ -109,10 +130,10 @@ class ClientController extends BaseController
 
     private function lireMontantPositif(): float|\CodeIgniter\HTTP\RedirectResponse
     {
-        $valeurBrute = str_replace(',', '.', trim((string) $this->request->getPost('montant')));
+        $valeurBrute = str_replace(', ', '.', trim((string) $this->request->getPost('montant')));
         if (! is_numeric($valeurBrute) || ($montant = (float) $valeurBrute) <= 0) {
-            return redirect()->back()->withInput()->with('error', 'Le montant saisi doit être strictement positif.');
+            return redirect()->back()->withInput()->with('error', 'Le montant saisi doit être strictement positif.' );
+                }
+                return round( $montant, 2 );
+            }
         }
-        return round($montant, 2);
-    }
-}

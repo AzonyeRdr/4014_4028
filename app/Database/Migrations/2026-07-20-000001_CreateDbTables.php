@@ -144,6 +144,25 @@ class CreateDbTables extends Migration
         ]);
         $this->forge->addPrimaryKey('id');
         $this->forge->createTable('promotion');
+
+        // Table: epargne
+        $this->forge->addField([
+            'num' => [
+                'type'           => 'INT',
+                'unique'     => true,
+            ],
+            'pourcentage' => [
+                'type' => 'DECIMAL',
+                'constraint' => '4,2',
+            ],
+            'montant' => [
+                'type' => 'DECIMAL',
+                'constraint' => '10,2',
+            ],
+
+        ]);
+        $this->forge->addForeignKey('num', 'numeros', 'num', 'CASCADE', 'CASCADE');
+        $this->forge->createTable('epargne');
     }
 
     public function down()
@@ -156,5 +175,6 @@ class CreateDbTables extends Migration
         $this->forge->dropTable('numeros', true);
         $this->forge->dropTable('prefixes', true);
         $this->forge->dropTable('promotion', true);
+        $this->forge->dropTable('epargne', true);
     }
 }

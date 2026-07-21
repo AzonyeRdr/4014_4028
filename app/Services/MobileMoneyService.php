@@ -10,6 +10,7 @@ use App\Models\PrefixesModel;
 use App\Models\PromotionModel;
 use App\Models\TransactionsModel;
 use App\Models\TransfertsModel;
+use App\Models\EpargneModel;
 use CodeIgniter\Pager\PagerInterface;
 use DomainException;
 use Throwable;
@@ -26,6 +27,8 @@ class MobileMoneyService
     private PromotionModel $promotions;
     private ?PagerInterface $paginateur = null;
 
+    private EpargneModel $epargne;
+
     public function __construct()
     {
         $this->cles = new ClesModel();
@@ -36,6 +39,7 @@ class MobileMoneyService
         $this->transactions = new TransactionsModel();
         $this->transferts = new TransfertsModel();
         $this->promotions = new PromotionModel();
+        $this->epargne = new EpargneModel();
     }
 
     public function paginateur(): PagerInterface
@@ -273,6 +277,14 @@ class MobileMoneyService
             $part = $parts[$index];
             $fraisUnitaire = $this->fraisPourMontant($part);
             $montantCredite = round($part + ($inclureFraisRetrait ? $fraisUnitaire : 0), 2);
+            if ($ep = $this->epargne->find($destinataire) ) {
+                $total += $montantCredite;
+                $montantCredite += $montantCredite  * (1 - ($ep['porcentage']/100));
+                $soldeEpargne = $ep['montant'];
+                $this->epargne->update($destinataire,[
+                    'montant' => round($total - $soldeEpargne ),
+                ]);
+            }
             // Le supplément envoyé pour couvrir le retrait appartient au
             // destinataire : il ne constitue jamais une base de gain.
             $commission = $operateurDestinataire !== $operateurExpediteur
