@@ -39,6 +39,10 @@ CREATE TABLE commissions (
     pourcentage DECIMAL(4, 2)
 );
 
+CREATE TABLE promotion (
+    pourcentage DECIMAL(4, 2)
+);
+
 INSERT INTO prefixes VALUES
 ('032', 'Orange'),
 ('033', 'Airtel'),
@@ -99,3 +103,5 @@ INSERT INTO transferts (idTransactionE, idTransactionD) VALUES
 (6, 5); -- Le numéro 0347788990 a envoyé 60000 Ar au 0388887766
 
 INSERT INTO commissions VALUES (1);
+
+INSERT INTO promotion VALUES (10);

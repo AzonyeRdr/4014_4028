@@ -14,6 +14,12 @@ class OperatorController extends BaseController
         $this->serviceMobile = new MobileMoneyService();
     }
 
+    public function modifierPromotion(int $id) {
+        $prom = (float) $this->request->getPost('prom');
+        $this->serviceMobile->modifierPromotion($id, $prom);
+        return redirect()->to('gains')->with('success', 'Promotion mis à jour');
+    }
+
     public function numeros()
     {
         return view('operator/numbers', [

@@ -7,6 +7,7 @@ use App\Models\CommissionsModel;
 use App\Models\FraisModel;
 use App\Models\NumerosModel;
 use App\Models\PrefixesModel;
+use App\Models\PromotionModel;
 use App\Models\TransactionsModel;
 use App\Models\TransfertsModel;
 use CodeIgniter\Pager\PagerInterface;
@@ -22,6 +23,7 @@ class MobileMoneyService
     private PrefixesModel $prefixes;
     private TransactionsModel $transactions;
     private TransfertsModel $transferts;
+    private PromotionModel $promotions;
     private ?PagerInterface $paginateur = null;
 
     public function __construct()
@@ -33,6 +35,7 @@ class MobileMoneyService
         $this->prefixes = new PrefixesModel();
         $this->transactions = new TransactionsModel();
         $this->transferts = new TransfertsModel();
+        $this->promotions = new PromotionModel();
     }
 
     public function paginateur(): PagerInterface
@@ -128,6 +131,12 @@ class MobileMoneyService
             'montantMin' => round($minimum, 2),
             'montantMax' => round($maximum, 2),
             'montantFrais' => round($montantFrais, 2),
+        ]);
+    }
+
+    public function modifierPromotion(int $id, float $pourcentage) {
+        return $this->promotions->update($id, [
+            'pourcentage' => round($pourcentage, 2),
         ]);
     }
 
@@ -270,7 +279,13 @@ class MobileMoneyService
                 ? round($part * $pourcentageCommission / 100, 2)
                 : 0.0;
             $credits[] = compact('destinataire', 'montantCredite', 'commission');
-            $totalFraisTransfert += $fraisUnitaire;
+            $prom = (float) $this->promotions->first();
+            if ($operateurDestinataire === $operateurExpediteur) {
+                $prom = $fraisUnitaire * (1 - ($prom / 10));
+                $totalFraisTransfert += $prom;
+            } else {
+                $totalFraisTransfert += $fraisUnitaire;
+            }
             $totalCommission += $commission;
             $totalCredits += $montantCredite;
         }

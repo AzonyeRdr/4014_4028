@@ -59,5 +59,8 @@ class DatabaseSeeder extends Seeder
             ['num' => '0388887766'],
         ];
         $this->db->table('numeros')->insertBatch($numeros);
+
+        $promotion = [['pourcentage' => 10.00]];
+        $this->db->table('promotion')->insertBatch($promotion);
     }
 }

@@ -58,4 +58,7 @@
     </tr><?php endforeach ?>
     <?php if ($baremesFrais === []): ?><tr><td colspan="4" class="text-center text-secondary">Aucune plage de frais.</td></tr><?php endif ?></tbody>
 </table></div></div>
+
+<h2 class="h4 mb-3">Promotion sur les frais</h2>
+<form action="promotion" method="post"></form>
 <?= $this->endSection() ?>

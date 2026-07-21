@@ -35,4 +35,5 @@ $routes->group('operator', ['filter' => 'operatorAuth'], static function ($route
     $routes->post('frais', 'OperatorController::ajouterBareme');
     $routes->post('frais/(:num)', 'OperatorController::modifierBareme/$1');
     $routes->post('frais/(:num)/supprimer', 'OperatorController::supprimerBareme/$1');
+    $routes->post('promotion/(:num)', 'OperatorController::modifierPromotion/$1');
 });
